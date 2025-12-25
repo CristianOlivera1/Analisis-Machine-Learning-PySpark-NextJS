@@ -1,0 +1,61 @@
+"""
+Run - Entry point de la aplicación
+"""
+
+import os
+import sys
+import logging
+
+# Patch para PySpark en Windows - DEBE ir antes de cualquier otra importación
+if sys.platform == 'win32':
+    import socketserver
+    # Crear un dummy para UnixStreamServer que no existe en Windows
+    class DummyUnixStreamServer:
+        pass
+    if not hasattr(socketserver, 'UnixStreamServer'):
+        socketserver.UnixStreamServer = DummyUnixStreamServer
+
+# Agregar el directorio raíz al path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from app import create_app
+from app.config import config_by_name
+
+# Configurar logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+logger = logging.getLogger(__name__)
+
+# Determinar entorno
+env = os.getenv('FLASK_ENV', 'development')
+
+# Crear aplicación
+app = create_app(config_by_name.get(env, config_by_name['default']))
+
+if __name__ == '__main__':
+    logger.info("=" * 60)
+    logger.info("ML PySpark Backend Server")
+    logger.info("=" * 60)
+    logger.info(f"Environment: {env}")
+    logger.info(f"Debug Mode: {app.config['DEBUG']}")
+    logger.info(f"Upload Folder: {app.config['UPLOAD_FOLDER']}")
+    logger.info(f"Models Folder: {app.config['MODELS_FOLDER']}")
+    logger.info(f"Reports Folder: {app.config['REPORTS_FOLDER']}")
+    logger.info("=" * 60)
+    
+    # Configuración del servidor
+    host = os.getenv('FLASK_HOST', '0.0.0.0')
+    port = int(os.getenv('FLASK_PORT', 5000))
+    
+    logger.info(f"Starting server on http://{host}:{port}")
+    logger.info("=" * 60)
+    
+    # Iniciar servidor
+    app.run(
+        host=host,
+        port=port,
+        debug=app.config['DEBUG']
+    )

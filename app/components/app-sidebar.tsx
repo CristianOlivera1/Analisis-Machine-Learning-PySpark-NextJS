@@ -1,10 +1,11 @@
 "use client"
 
-import { Calendar, Home, Inbox, Search, Settings } from "lucide-react"
+import { BrainCircuit, Calendar, Database, Home, Inbox, LayoutDashboard, Search, Settings } from "lucide-react"
 
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -15,17 +16,16 @@ import {
 } from "@/components/ui/sidebar"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-
 const items = [
   {
     title: "Dashboard",
     url: "/admin",
-    icon: Inbox,
+    icon: LayoutDashboard,
   },
   {
     title: "Entrenamiento",
-    url: "/admin/training",
-    icon: Calendar,
+    url: "/admin/entrenamiento",
+    icon: BrainCircuit,
   }
 ]
 export default function AppSidebar() {
@@ -33,18 +33,25 @@ export default function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
+
+      <SidebarHeader className="border-b border-sidebar-border">
+        <div className="flex items-center gap-2 group-data-[collapsible=icon]:px-0 sm:px-2">
+          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gray-200 text-black">
+            <Database className="size-5" />
+          </div>
+          <div className="flex flex-col leading-none group-data-[collapsible=icon]:hidden">
+            <span className="font-semibold">Análisis ML</span>
+            <span className="text-xs text-muted-foreground">con PySpark</span>
+          </div>
+        </div>
+      </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarHeader>
-            <h1 className="text-lg font-bold tracking-wide">
-              Data Intelligence Hub
-            </h1>
-          </SidebarHeader>
+          <SidebarGroupLabel></SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {
                 const active = pathname === item.url
-
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
@@ -65,6 +72,11 @@ export default function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <div className="p-2 group-data-[collapsible=icon]:hidden text-[10px] text-center opacity-50">
+          © 2025 ML App
+        </div>
+      </SidebarFooter>
     </Sidebar>
   )
 }

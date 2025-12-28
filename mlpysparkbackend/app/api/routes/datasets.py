@@ -1,18 +1,13 @@
-"""
+﻿"""
 Dataset Routes - Gestión de datasets
 """
 
 from flask import Blueprint, request, jsonify, current_app
-from werkzeug.utils import secure_filename
 
 from app.services.dataset_service import DatasetService
-from app.api.schemas.dataset_schemas import (
-    UploadDatasetSchema,
-    UploadJsonDatasetSchema,
-    DatasetResponseSchema
-)
-from app.utils.validators import validate_file_extension, validate_request_json
-from app.utils.exceptions import ValidationError, NotFoundError
+from app.api.schemas.dataset_schemas import DatasetResponseSchema
+from app.utils.validators import validate_file_extension
+from app.utils.exceptions import ValidationError
 from app.utils.decorators import handle_exceptions
 
 datasets_bp = Blueprint('datasets', __name__)
@@ -49,36 +44,7 @@ def upload_dataset():
     # Procesar archivo
     result = DatasetService.upload_file(file)
     
-    return jsonify({
-        'success': True,
-        **DatasetResponseSchema.dump(result)
-    }), 201
-
-
-@datasets_bp.route('/upload-json', methods=['POST'])
-@handle_exceptions
-def upload_dataset_json():
-    """
-    Subir dataset desde JSON (localStorage)
-    
-    Request Body:
-        data: Lista de registros
-        name: Nombre del dataset (opcional)
-        
-    Returns:
-        Dataset info con ID generado
-    """
-    data = validate_request_json(request, UploadJsonDatasetSchema)
-    
-    result = DatasetService.upload_json(
-        data=data['data'],
-        name=data.get('name')
-    )
-    
-    return jsonify({
-        'success': True,
-        **DatasetResponseSchema.dump(result)
-    }), 201
+    return jsonify(DatasetResponseSchema.dump(result)), 201
 
 
 @datasets_bp.route('', methods=['GET'])
@@ -95,26 +61,6 @@ def list_datasets():
     return jsonify({
         'datasets': [DatasetResponseSchema.dump_summary(d) for d in datasets]
     })
-
-
-@datasets_bp.route('/<dataset_id>', methods=['GET'])
-@handle_exceptions
-def get_dataset(dataset_id: str):
-    """
-    Obtener información de un dataset
-    
-    Args:
-        dataset_id: ID del dataset
-        
-    Returns:
-        Información detallada del dataset
-    """
-    dataset = DatasetService.get_by_id(dataset_id)
-    
-    if not dataset:
-        raise NotFoundError('Dataset', dataset_id)
-    
-    return jsonify(DatasetResponseSchema.dump(dataset))
 
 
 @datasets_bp.route('/<dataset_id>/preview', methods=['GET'])
@@ -163,20 +109,6 @@ def delete_dataset(dataset_id: str):
     })
 
 
-@datasets_bp.route('/samples', methods=['GET'])
-@handle_exceptions
-def get_sample_datasets():
-    """
-    Obtener lista de datasets de ejemplo
-    
-    Returns:
-        Lista de datasets de ejemplo disponibles
-    """
-    samples = DatasetService.get_available_samples()
-    
-    return jsonify({'samples': samples})
-
-
 @datasets_bp.route('/samples/<sample_id>/load', methods=['POST'])
 @handle_exceptions
 def load_sample_dataset(sample_id: str):
@@ -191,7 +123,4 @@ def load_sample_dataset(sample_id: str):
     """
     result = DatasetService.load_sample(sample_id)
     
-    return jsonify({
-        'success': True,
-        **DatasetResponseSchema.dump(result)
-    }), 201
+    return jsonify(DatasetResponseSchema.dump(result)), 201

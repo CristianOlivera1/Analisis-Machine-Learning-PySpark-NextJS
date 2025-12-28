@@ -5,14 +5,7 @@ Implementa patrón Singleton para la sesión de Spark
 
 from typing import Optional, Dict, Any
 import logging
-import os
-import sys
 from threading import Lock
-
-# Configurar para Windows antes de importar PySpark
-if sys.platform == 'win32':
-    os.environ['PYSPARK_PYTHON'] = sys.executable
-    os.environ['PYSPARK_DRIVER_PYTHON'] = sys.executable
 
 from pyspark.sql import SparkSession
 
@@ -75,15 +68,11 @@ class SparkManager:
                 .master("local[*]") \
                 .config("spark.driver.memory", cls._config.get('driver_memory', '4g')) \
                 .config("spark.executor.memory", cls._config.get('executor_memory', '4g')) \
-                .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
                 .config("spark.sql.session.timeZone", "UTC") \
                 .config("spark.driver.extraJavaOptions", "-Duser.timezone=UTC") \
                 .config("spark.executor.extraJavaOptions", "-Duser.timezone=UTC") \
-                .config("spark.driver.host", "localhost")
-            
-            # Configuraciones adicionales para Windows
-            if sys.platform == 'win32':
-                builder = builder.config("spark.sql.warehouse.dir", "file:///C:/temp/spark-warehouse")
+                .config("spark.driver.host", "localhost") \
+                .config("spark.sql.execution.arrow.pyspark.enabled", "true")
             
             session = builder.getOrCreate()
             

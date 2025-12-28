@@ -204,21 +204,3 @@ pytest --cov=app
   "field": "campo_con_error"  // opcional
 }
 ```
-
-## Contribuir
-
-1. Fork el proyecto
-2. Crear rama de feature (`git checkout -b feature/AmazingFeature`)
-3. Commit cambios (`git commit -m 'Add some AmazingFeature'`)
-4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abrir Pull Request
-
-## Licencia
-
-MIT
-
-## Contacto
-
-Tu Nombre - [@tu_twitter](https://twitter.com/tu_twitter)
-
-Project Link: [https://github.com/tu-usuario/mlpysparkbackend](https://github.com/tu-usuario/mlpysparkbackend)

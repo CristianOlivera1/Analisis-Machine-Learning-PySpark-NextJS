@@ -2,10 +2,36 @@
 Helpers - Funciones auxiliares
 """
 
+import os
+import tempfile
+import logging
 from typing import Any, Dict, List
 import pandas as pd
-from pyspark.sql import DataFrame
-from pyspark.sql.types import StringType, IntegerType, LongType, DoubleType, FloatType, BooleanType, DateType, TimestampType
+from pyspark.sql import DataFrame, SparkSession
+from pyspark.sql.types import (
+    StringType, IntegerType, LongType, DoubleType, FloatType, 
+    BooleanType, DateType, TimestampType
+)
+
+logger = logging.getLogger(__name__)
+
+
+def pandas_to_spark(spark: SparkSession, pdf: pd.DataFrame) -> DataFrame:
+    """
+    Convertir Pandas DataFrame a Spark DataFrame
+    
+    Args:
+        spark: SparkSession activa
+        pdf: Pandas DataFrame a convertir
+        
+    Returns:
+        Spark DataFrame
+    """
+    # Limpiar datos: reemplazar NaN con None
+    pdf_clean = pdf.where(pd.notnull(pdf), None)
+    
+    # Crear DataFrame directamente
+    return spark.createDataFrame(pdf_clean)
 
 
 def get_column_type(dtype) -> str:

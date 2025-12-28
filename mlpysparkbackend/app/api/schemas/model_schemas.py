@@ -1,8 +1,8 @@
-"""
+﻿"""
 Model Schemas - Validación para endpoints de modelos ML
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 class TrainModelSchema:
@@ -126,41 +126,6 @@ class TrainModelSchema:
             validated['elasticNetParam'] = max(0.0, min(float(params['elasticNetParam']), 1.0))
         
         return validated
-
-
-class PredictSchema:
-    """Schema para validar solicitudes de predicción"""
-    
-    @classmethod
-    def validate(cls, data: Dict) -> tuple[bool, Dict, List[str]]:
-        """
-        Validar solicitud de predicción
-        
-        Returns:
-            Tuple (is_valid, validated_data, errors)
-        """
-        errors = []
-        validated = {}
-        
-        if not data:
-            return False, {}, ['No se proporcionaron datos']
-        
-        # Validar data (requerido)
-        if 'data' not in data:
-            errors.append('Se requiere data')
-        else:
-            input_data = data['data']
-            if isinstance(input_data, dict):
-                validated['data'] = [input_data]
-            elif isinstance(input_data, list):
-                if len(input_data) == 0:
-                    errors.append('data no puede estar vacío')
-                else:
-                    validated['data'] = input_data
-            else:
-                errors.append('data debe ser un objeto o lista de objetos')
-        
-        return len(errors) == 0, validated, errors
 
 
 class ModelResponseSchema:

@@ -1,6 +1,7 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import AppSidebar from "../components/app-sidebar"; // Ajusta la ruta
 import { Header } from "../components/header";
+import { Toaster } from "@/components/ui/toaster";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,6 +13,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {children}
         </main>
       </div>
+      <Toaster />
     </SidebarProvider>
   );
 }

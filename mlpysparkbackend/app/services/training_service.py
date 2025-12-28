@@ -42,6 +42,7 @@ from pyspark.mllib.evaluation import MulticlassMetrics
 
 from app.core.spark_manager import SparkManager
 from app.core.storage import DatasetStorage, ModelStorage
+from app.utils.helpers import pandas_to_spark
 from app.utils.exceptions import (
     ValidationError,
     NotFoundError,
@@ -312,9 +313,11 @@ class TrainingService:
         model_type = model_info['model_type']
         
         try:
-            # Create DataFrame from input data
+            # Create DataFrame from input data (Windows-safe method)
             spark = SparkManager.get_session()
-            input_df = spark.createDataFrame(data)
+            import pandas as pd
+            pdf = pd.DataFrame(data)
+            input_df = pandas_to_spark(spark, pdf)
             
             # Validate features
             missing_features = set(features) - set(input_df.columns)
@@ -668,15 +671,24 @@ class TrainingService:
                     )
                     stages.append(label_indexer)
                 else:
-                    # If numeric, just rename to label
-                    train_df = train_df.withColumnRenamed(target, 'label')
+                    # If numeric, use SQL transformer to rename to label
+                    from pyspark.ml.feature import SQLTransformer
+                    sql_transformer = SQLTransformer(
+                        statement=f"SELECT *, `{target}` as label FROM __THIS__"
+                    )
+                    stages.append(sql_transformer)
             else:  # regression
                 # For regression, ensure target is numeric
                 if 'String' in target_dtype:
                     raise ValidationError(
                         f"Target column '{target}' must be numeric for regression"
                     )
-                train_df = train_df.withColumnRenamed(target, 'label')
+                # Use SQL transformer to rename to label
+                from pyspark.ml.feature import SQLTransformer
+                sql_transformer = SQLTransformer(
+                    statement=f"SELECT *, `{target}` as label FROM __THIS__"
+                )
+                stages.append(sql_transformer)
         
         # Get model class and build model
         model_class = TrainingService.ALGORITHMS[model_type][algorithm]['class']

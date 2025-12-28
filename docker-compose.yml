@@ -1,0 +1,19 @@
+services:
+  backend:
+    build: ./mlpysparkbackend
+    container_name: mlpyspark-backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlpysparkbackend/storage:/app/storage
+    environment:
+      - FLASK_ENV=development
+      - FLASK_HOST=0.0.0.0
+      - FLASK_PORT=5000
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+networks:
+  default:
+    driver: bridge
+

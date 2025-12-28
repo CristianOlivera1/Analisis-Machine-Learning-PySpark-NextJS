@@ -19,7 +19,7 @@ from pyspark.sql.functions import col, count, when, isnan
 
 from app.core.spark_manager import SparkManager
 from app.core.storage import DatasetStorage
-from app.utils.helpers import get_column_type, dataframe_to_json
+from app.utils.helpers import get_column_type, dataframe_to_json, pandas_to_spark
 from app.utils.exceptions import (
     ValidationError,
     NotFoundError,
@@ -111,7 +111,7 @@ class DatasetService:
             elif file_ext in ['.xlsx', '.xls']:
                 # For Excel, convert through pandas first
                 pdf = pd.read_excel(temp_path, engine='openpyxl' if file_ext == '.xlsx' else 'xlrd')
-                df = spark.createDataFrame(pdf)
+                df = pandas_to_spark(spark, pdf)
                 logger.info(f"Excel file loaded: {filename}")
                 
             else:
@@ -135,9 +135,10 @@ class DatasetService:
             logger.info(f"Dataset stored successfully: {dataset_id} ({filename})")
             
             return {
-                'success': True,
-                'dataset_id': dataset_id,
+                'id': dataset_id,
                 'filename': filename,
+                'path': temp_path,
+                'created_at': datetime.now().isoformat(),
                 'info': info
             }
             
@@ -190,7 +191,7 @@ class DatasetService:
             
             try:
                 pdf = pd.DataFrame(records)
-                df = spark.createDataFrame(pdf)
+                df = pandas_to_spark(spark, pdf)
             except Exception as e:
                 raise ValidationError(f"Error al convertir datos a DataFrame: {str(e)}")
             
@@ -211,9 +212,10 @@ class DatasetService:
             logger.info(f"JSON dataset stored successfully: {dataset_id} ({filename})")
             
             return {
-                'success': True,
-                'dataset_id': dataset_id,
+                'id': dataset_id,
                 'filename': filename,
+                'path': None,
+                'created_at': datetime.now().isoformat(),
                 'info': info
             }
             
@@ -335,12 +337,15 @@ class DatasetService:
             datasets = []
             
             for dataset in DatasetStorage.list_all():
+                info = dataset.get('info', {})
+                columns_info = info.get('columns', [])
+                
                 datasets.append({
                     'id': dataset['id'],
                     'filename': dataset['filename'],
+                    'path': dataset.get('path'),
                     'created_at': dataset['created_at'],
-                    'row_count': dataset['info']['row_count'],
-                    'column_count': dataset['info']['column_count']
+                    'info': info  # Include full info for schema to process
                 })
             
             logger.info(f"Listed {len(datasets)} datasets")
@@ -511,8 +516,8 @@ class DatasetService:
                     f"Opciones válidas: iris, wine, housing"
                 )
             
-            # Convert to Spark DataFrame
-            df = spark.createDataFrame(pdf)
+            # Convert to Spark DataFrame (Windows-safe method)
+            df = pandas_to_spark(spark, pdf)
             
             # Get dataset information
             info = DatasetService._get_dataset_info(df)
@@ -529,9 +534,10 @@ class DatasetService:
             logger.info(f"Sample dataset stored successfully: {dataset_id} ({name})")
             
             return {
-                'success': True,
-                'dataset_id': dataset_id,
+                'id': dataset_id,
                 'filename': name,
+                'path': None,
+                'created_at': datetime.now().isoformat(),
                 'sample_id': sample_id,
                 'info': info
             }
@@ -559,15 +565,17 @@ class DatasetService:
             
             for field in df.schema.fields:
                 # Get null count statistics
+                # Use backticks to escape column names with special characters (dots, spaces, etc.)
+                col_name = f"`{field.name}`"
                 col_stats = df.select(
                     count(
                         when(
-                            col(field.name).isNull() | 
-                            (isnan(col(field.name)) if get_column_type(field.dataType) == 'numeric' else col(field.name).isNull()),
+                            col(col_name).isNull() | 
+                            (isnan(col(col_name)) if get_column_type(field.dataType) == 'numeric' else col(col_name).isNull()),
                             True
                         )
                     ).alias('null_count'),
-                    count(col(field.name)).alias('non_null_count')
+                    count(col(col_name)).alias('non_null_count')
                 ).first()
                 
                 columns_info.append({

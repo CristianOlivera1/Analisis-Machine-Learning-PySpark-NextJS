@@ -1,6 +1,6 @@
 "use client"
 
-import { BrainCircuit, Calendar, Database, Home, Inbox, LayoutDashboard, Search, Settings } from "lucide-react"
+import { BrainCircuit, Database } from "lucide-react"
 
 import {
   Sidebar,
@@ -18,15 +18,10 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 const items = [
   {
-    title: "Dashboard",
-    url: "/admin",
-    icon: LayoutDashboard,
-  },
-  {
     title: "Entrenamiento",
-    url: "/admin/entrenamiento",
-    icon: BrainCircuit,
-  }
+    url: "/admin",
+    icon: BrainCircuit
+  },
 ]
 export default function AppSidebar() {
   const pathname = usePathname()

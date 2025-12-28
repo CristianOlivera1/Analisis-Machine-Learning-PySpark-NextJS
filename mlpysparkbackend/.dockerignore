@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Storage (no incluir datos de desarrollo)
+storage/uploads/*
+storage/models/*
+storage/reports/*
+
+# Environment files
+.env
+.env.local
+
+# Windows patches (ya no necesarios)
+windows_compat.py
+pyspark_patch.py
+run_docker.py

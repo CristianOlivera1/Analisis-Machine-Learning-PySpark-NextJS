@@ -6,15 +6,6 @@ import os
 import sys
 import logging
 
-# Patch para PySpark en Windows - DEBE ir antes de cualquier otra importación
-if sys.platform == 'win32':
-    import socketserver
-    # Crear un dummy para UnixStreamServer que no existe en Windows
-    class DummyUnixStreamServer:
-        pass
-    if not hasattr(socketserver, 'UnixStreamServer'):
-        socketserver.UnixStreamServer = DummyUnixStreamServer
-
 # Agregar el directorio raíz al path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 

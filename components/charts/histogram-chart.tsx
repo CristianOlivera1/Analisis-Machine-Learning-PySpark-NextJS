@@ -26,7 +26,7 @@ export function HistogramChart({ data, height = 300 }: HistogramChartProps) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 pb-8">
       <h4 className="text-sm font-medium">Histograma: {data.column} ({data.bins} bins)</h4>
       <ResponsiveContainer width="100%" height={height}>
         <BarChart data={data.data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>

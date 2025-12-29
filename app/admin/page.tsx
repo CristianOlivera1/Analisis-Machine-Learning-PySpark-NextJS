@@ -1,5 +1,6 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -206,23 +207,45 @@ function UploadTab({
     <div className="grid gap-4 md:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>Subir Dataset</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Subir Dataset
+          </CardTitle>
           <CardDescription>
             Carga un archivo CSV o Excel con tus datos
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid w-full items-center gap-1.5">
-            <Label htmlFor="file">Archivo</Label>
-            <Input
-              id="file"
-              type="file"
-              accept=".csv,.xlsx,.xls"
-              onChange={onFileUpload}
-              disabled={loading}
-            />
+            <Label htmlFor="file" className={loading ? "opacity-50" : ""}>
+              Archivo
+            </Label>
+
+            <div className="relative">
+              <Input
+                id="file"
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={onFileUpload}
+                disabled={loading}
+                className={`cursor-pointer ${loading ? "pr-10" : ""}`}
+              />
+
+              {/* Loader superpuesto en el input o a un lado */}
+              {loading && (
+                <div className="absolute inset-y-0 right-3 flex items-center">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              )}
+            </div>
+
             <p className="text-xs text-muted-foreground">
-              Formatos soportados: CSV, Excel (.xlsx, .xls)
+              {loading ? (
+                <span className="text-primary animate-pulse font-medium">
+                  Procesando archivo... por favor espera.
+                </span>
+              ) : (
+                "Formatos soportados: CSV, Excel (.xlsx, .xls)"
+              )}
             </p>
           </div>
         </CardContent>
@@ -236,7 +259,7 @@ function UploadTab({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
-          {['iris', 'wine', 'diabetes'].map((sample) => (
+          {['iris', 'wine', 'housing'].map((sample) => (
             <Button
               key={sample}
               variant="outline"
@@ -826,9 +849,9 @@ function ModelsTab({
                       {Object.entries(model.metrics).map(([key, value]) => (
                         <div key={key}>
                           <span className="text-muted-foreground">{key}:</span>{" "}
-                          {typeof value === 'number' 
-                            ? value.toFixed(4) 
-                            : typeof value === 'object' 
+                          {typeof value === 'number'
+                            ? value.toFixed(4)
+                            : typeof value === 'object'
                               ? JSON.stringify(value)
                               : String(value)}
                         </div>

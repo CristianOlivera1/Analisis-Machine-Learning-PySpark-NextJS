@@ -11,7 +11,6 @@ from datetime import datetime
 
 from pyspark.sql import DataFrame
 from pyspark.sql.functions import col, count, when, isnan, lit, udf, array
-from pyspark.sql.types import StringType, DoubleType, IntegerType, ArrayType
 from pyspark.ml import Pipeline, PipelineModel
 from pyspark.ml.feature import (
     VectorAssembler, 
@@ -172,7 +171,6 @@ class TrainingService:
         """
         logger.info(f"Starting training: {model_type}/{algorithm} on dataset {dataset_id}")
         
-        # Validate inputs
         TrainingService._validate_training_inputs(
             model_type, algorithm, features, target, test_size
         )
@@ -183,12 +181,10 @@ class TrainingService:
             raise NotFoundError(f"Dataset {dataset_id} not found")
         
         try:
-            # Preprocess data
             processed_df = TrainingService._preprocess_data(
                 df, features, target, model_type
             )
             
-            # Split data
             train_df, test_df = TrainingService._split_data(
                 processed_df, test_size
             )
@@ -197,27 +193,22 @@ class TrainingService:
             test_count = test_df.count()
             logger.info(f"Data split: {train_count} train, {test_count} test samples")
             
-            # Build and train pipeline
             pipeline_model = TrainingService._build_and_train_pipeline(
                 train_df, model_type, algorithm, features, target, params or {}
             )
             
-            # Make predictions on test set
             predictions = pipeline_model.transform(test_df)
             
-            # Calculate metrics
             metrics = TrainingService._calculate_metrics(
                 model_type, predictions, target
             )
-            
-            # Extract feature importance if available
+
             feature_importance = TrainingService._extract_feature_importance(
                 pipeline_model, algorithm, features
             )
             if feature_importance:
                 metrics['feature_importance'] = feature_importance
             
-            # Store model
             model_id = str(uuid.uuid4())
             ModelStorage.add_model(
                 id=model_id,
@@ -252,27 +243,6 @@ class TrainingService:
             raise InternalServerError(f"Training failed: {str(e)}")
     
     @staticmethod
-    def get_by_id(model_id: str) -> Dict[str, Any]:
-        """
-        Get model information by ID
-        
-        Args:
-            model_id: Model ID
-            
-        Returns:
-            Model information dict
-            
-        Raises:
-            NotFoundError: Model not found
-        """
-        model_info = ModelStorage.get_info(model_id)
-        if model_info is None:
-            raise NotFoundError(f"Model {model_id} not found")
-        
-        logger.info(f"Retrieved model {model_id}")
-        return model_info
-    
-    @staticmethod
     def list_all() -> List[Dict[str, Any]]:
         """
         List all trained models
@@ -283,81 +253,6 @@ class TrainingService:
         models = ModelStorage.list_all()
         logger.info(f"Listed {len(models)} models")
         return models
-    
-    @staticmethod
-    def predict(model_id: str, data: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """
-        Make predictions using a trained model
-        
-        Args:
-            model_id: Model ID
-            data: List of data points as dicts
-            
-        Returns:
-            Dict with predictions
-            
-        Raises:
-            NotFoundError: Model not found
-            ValidationError: Invalid input data
-            InternalServerError: Prediction failed
-        """
-        logger.info(f"Making predictions with model {model_id}")
-        
-        # Get model
-        model_info = ModelStorage.get(model_id)
-        if model_info is None:
-            raise NotFoundError(f"Model {model_id} not found")
-        
-        pipeline_model = model_info['pipeline_model']
-        features = model_info['features']
-        model_type = model_info['model_type']
-        
-        try:
-            # Create DataFrame from input data (Windows-safe method)
-            spark = SparkManager.get_session()
-            import pandas as pd
-            pdf = pd.DataFrame(data)
-            input_df = pandas_to_spark(spark, pdf)
-            
-            # Validate features
-            missing_features = set(features) - set(input_df.columns)
-            if missing_features:
-                raise ValidationError(
-                    f"Missing features: {', '.join(missing_features)}"
-                )
-            
-            # Make predictions
-            predictions_df = pipeline_model.transform(input_df)
-            
-            # Extract predictions based on model type
-            if model_type in ['classification', 'regression']:
-                prediction_col = 'prediction'
-            else:  # clustering
-                prediction_col = 'prediction'
-            
-            # Collect results
-            results = []
-            for row in predictions_df.collect():
-                result = {feature: row[feature] for feature in features}
-                result['prediction'] = float(row[prediction_col])
-                
-                # Add probability for classification
-                if model_type == 'classification' and 'probability' in predictions_df.columns:
-                    result['probability'] = row['probability'].toArray().tolist()
-                
-                results.append(result)
-            
-            logger.info(f"Generated {len(results)} predictions")
-            
-            return {
-                'model_id': model_id,
-                'predictions': results,
-                'count': len(results)
-            }
-            
-        except Exception as e:
-            logger.error(f"Prediction failed: {str(e)}", exc_info=True)
-            raise InternalServerError(f"Prediction failed: {str(e)}")
     
     @staticmethod
     def delete(model_id: str) -> bool:
@@ -380,122 +275,7 @@ class TrainingService:
         logger.info(f"Model {model_id} deleted")
         return deleted
     
-    @staticmethod
-    def get_feature_importance(model_id: str) -> Dict[str, Any]:
-        """
-        Get feature importance for tree-based models
-        
-        Args:
-            model_id: Model ID
-            
-        Returns:
-            Dict with feature importance
-            
-        Raises:
-            NotFoundError: Model not found
-            BadRequestError: Model doesn't support feature importance
-        """
-        model_info = ModelStorage.get(model_id)
-        if model_info is None:
-            raise NotFoundError(f"Model {model_id} not found")
-        
-        algorithm = model_info['algorithm']
-        pipeline_model = model_info['pipeline_model']
-        features = model_info['features']
-        
-        # Check if algorithm supports feature importance
-        tree_based = ['decision_tree', 'random_forest', 'gbt', 
-                      'decision_tree_reg', 'random_forest_reg', 'gbt_reg']
-        
-        if algorithm not in tree_based:
-            raise BadRequestError(
-                f"Algorithm {algorithm} does not support feature importance"
-            )
-        
-        try:
-            importance = TrainingService._extract_feature_importance(
-                pipeline_model, algorithm, features
-            )
-            
-            if not importance:
-                raise BadRequestError("Could not extract feature importance")
-            
-            logger.info(f"Retrieved feature importance for model {model_id}")
-            return {
-                'model_id': model_id,
-                'feature_importance': importance
-            }
-            
-        except Exception as e:
-            logger.error(f"Failed to get feature importance: {str(e)}")
-            raise InternalServerError(f"Failed to get feature importance: {str(e)}")
-    
-    @staticmethod
-    def evaluate(model_id: str, dataset_id: str) -> Dict[str, Any]:
-        """
-        Evaluate a model on a new dataset
-        
-        Args:
-            model_id: Model ID
-            dataset_id: Dataset ID to evaluate on
-            
-        Returns:
-            Dict with evaluation metrics
-            
-        Raises:
-            NotFoundError: Model or dataset not found
-            InternalServerError: Evaluation failed
-        """
-        logger.info(f"Evaluating model {model_id} on dataset {dataset_id}")
-        
-        # Get model
-        model_info = ModelStorage.get(model_id)
-        if model_info is None:
-            raise NotFoundError(f"Model {model_id} not found")
-        
-        # Get dataset
-        df = DatasetStorage.get_dataframe(dataset_id)
-        if df is None:
-            raise NotFoundError(f"Dataset {dataset_id} not found")
-        
-        pipeline_model = model_info['pipeline_model']
-        model_type = model_info['model_type']
-        features = model_info['features']
-        target = model_info['target']
-        
-        try:
-            # Preprocess data
-            processed_df = TrainingService._preprocess_data(
-                df, features, target, model_type
-            )
-            
-            # Make predictions
-            predictions = pipeline_model.transform(processed_df)
-            
-            # Calculate metrics
-            metrics = TrainingService._calculate_metrics(
-                model_type, predictions, target
-            )
-            
-            sample_count = processed_df.count()
-            
-            logger.info(f"Evaluation complete on {sample_count} samples")
-            
-            return {
-                'model_id': model_id,
-                'dataset_id': dataset_id,
-                'metrics': metrics,
-                'sample_count': sample_count,
-                'evaluated_at': datetime.now().isoformat()
-            }
-            
-        except Exception as e:
-            logger.error(f"Evaluation failed: {str(e)}", exc_info=True)
-            raise InternalServerError(f"Evaluation failed: {str(e)}")
-    
-    # ============================================================================
-    # Private Helper Methods
-    # ============================================================================
+    # ==================== Private Helper Methods ====================
     
     @staticmethod
     def _validate_training_inputs(
@@ -566,7 +346,6 @@ class TrainingService:
         # Select columns
         df = df.select(columns_to_select)
         
-        # Drop rows with null values in features or target
         initial_count = df.count()
         df = df.dropna()
         final_count = df.count()
@@ -637,10 +416,8 @@ class TrainingService:
             stages.append(indexer)
             indexed_features.append(f"{cat_feature}_indexed")
         
-        # Combine all features for assembly
         all_features = numerical_features + indexed_features
         
-        # Vector assembler
         assembler = VectorAssembler(
             inputCols=all_features,
             outputCol='features_raw',
@@ -648,7 +425,6 @@ class TrainingService:
         )
         stages.append(assembler)
         
-        # Standard scaler
         scaler = StandardScaler(
             inputCol='features_raw',
             outputCol='features',
@@ -657,12 +433,10 @@ class TrainingService:
         )
         stages.append(scaler)
         
-        # Handle target for classification/regression
         if model_type in ['classification', 'regression']:
             target_dtype = str(train_df.schema[target].dataType)
             
             if model_type == 'classification':
-                # Index target if it's categorical
                 if 'String' in target_dtype:
                     label_indexer = StringIndexer(
                         inputCol=target,
@@ -671,7 +445,6 @@ class TrainingService:
                     )
                     stages.append(label_indexer)
                 else:
-                    # If numeric, use SQL transformer to rename to label
                     from pyspark.ml.feature import SQLTransformer
                     sql_transformer = SQLTransformer(
                         statement=f"SELECT *, `{target}` as label FROM __THIS__"
@@ -690,16 +463,13 @@ class TrainingService:
                 )
                 stages.append(sql_transformer)
         
-        # Get model class and build model
         model_class = TrainingService.ALGORITHMS[model_type][algorithm]['class']
         
-        # Build model with parameters
         model_params = TrainingService._build_model_params(
             model_class, params
         )
         
         if model_type == 'clustering':
-            # Clustering models don't use 'label'
             model = model_class(featuresCol='features', **model_params)
         else:
             model = model_class(
@@ -710,7 +480,6 @@ class TrainingService:
         
         stages.append(model)
         
-        # Create and fit pipeline
         pipeline = Pipeline(stages=stages)
         
         logger.info(f"Training pipeline with {len(stages)} stages")
@@ -724,7 +493,6 @@ class TrainingService:
         """Build model parameters with type conversion"""
         model_params = {}
         
-        # Map common parameter names and convert types
         param_mapping = {
             'maxIter': ('maxIter', int),
             'regParam': ('regParam', float),

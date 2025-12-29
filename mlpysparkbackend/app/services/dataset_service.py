@@ -481,7 +481,7 @@ class DatasetService:
                     iris.data,
                     columns=['sepal_length', 'sepal_width', 'petal_length', 'petal_width']
                 )
-                pdf['species'] = iris.target
+                pdf['species'] = iris.target.astype(int)
                 # Map target to species names
                 species_names = ['setosa', 'versicolor', 'virginica']
                 pdf['species_name'] = pdf['species'].apply(lambda x: species_names[x])
@@ -491,9 +491,9 @@ class DatasetService:
             elif sample_id == 'wine':
                 wine = datasets.load_wine()
                 pdf = pd.DataFrame(wine.data, columns=wine.feature_names)
-                pdf['target'] = wine.target
-                # Map target to wine class names
-                pdf['wine_class'] = pdf['target'].apply(lambda x: wine.target_names[x])
+                pdf['target'] = wine.target.astype(int)
+                # Map target to wine class names (convert to string explicitly)
+                pdf['wine_class'] = pdf['target'].apply(lambda x: str(wine.target_names[x]))
                 name = 'Wine Quality Dataset'
                 logger.info("Wine dataset loaded from sklearn")
                 
@@ -503,7 +503,7 @@ class DatasetService:
                     from sklearn.datasets import fetch_california_housing
                     housing = fetch_california_housing()
                     pdf = pd.DataFrame(housing.data, columns=housing.feature_names)
-                    pdf['price'] = housing.target
+                    pdf['price'] = housing.target.astype(float)
                     name = 'California Housing Dataset'
                     logger.info("California Housing dataset loaded from sklearn")
                 except Exception as e:

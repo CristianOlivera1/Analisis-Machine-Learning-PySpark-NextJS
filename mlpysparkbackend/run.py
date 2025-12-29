@@ -1,7 +1,3 @@
-"""
-Run - Entry point de la aplicación
-"""
-
 import os
 import sys
 import logging

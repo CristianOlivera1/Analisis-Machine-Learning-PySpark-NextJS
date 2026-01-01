@@ -20,7 +20,7 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
-      timeout: 30000, // 30 segundos
+      timeout: 30000, 
     });
 
     // Interceptor para manejo de errores
@@ -107,13 +107,12 @@ class ApiClient {
   }
 
   async trainModel(request: TrainingRequest): Promise<Model> {
-    // Map frontend field names to backend field names
     const backendRequest = {
       dataset_id: request.dataset_id,
       model_type: request.model_type,
       algorithm: request.algorithm,
-      features: request.feature_columns,  // backend expects 'features'
-      target: request.target_column,      // backend expects 'target'
+      features: request.feature_columns, 
+      target: request.target_column,      
       test_size: request.test_size,
       params: request.params,
       model_name: request.model_name

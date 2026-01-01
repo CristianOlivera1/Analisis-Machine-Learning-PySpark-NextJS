@@ -8,7 +8,7 @@ from typing import Dict, List
 class TrainModelSchema:
     """Schema para validar solicitudes de entrenamiento"""
     
-    VALID_MODEL_TYPES = ['classification', 'regression', 'clustering']
+    VALID_MODEL_TYPES = ['classification', 'regression']
     
     VALID_ALGORITHMS = {
         'classification': [
@@ -17,9 +17,6 @@ class TrainModelSchema:
         ],
         'regression': [
             'linear_regression', 'decision_tree_reg', 'random_forest_reg', 'gbt_reg'
-        ],
-        'clustering': [
-            'kmeans', 'bisecting_kmeans', 'gaussian_mixture'
         ]
     }
     
@@ -72,15 +69,12 @@ class TrainModelSchema:
         else:
             validated['features'] = [str(f) for f in data['features']]
         
-        # Validar target (requerido para clasificación y regresión)
+        # Validar target (requerido)
         model_type = data.get('model_type')
-        if model_type in ['classification', 'regression']:
-            if 'target' not in data or not data['target']:
-                errors.append(f'Se requiere target para {model_type}')
-            else:
-                validated['target'] = str(data['target'])
-        elif 'target' in data:
-            validated['target'] = str(data['target']) if data['target'] else None
+        if 'target' not in data or not data['target']:
+            errors.append(f'Se requiere target para {model_type}')
+        else:
+            validated['target'] = str(data['target'])
         
         # Validar params (opcional)
         params = data.get('params', {})
@@ -118,9 +112,6 @@ class TrainModelSchema:
         
         if 'numTrees' in params:
             validated['numTrees'] = max(1, min(int(params['numTrees']), 200))
-        
-        if 'k' in params:  # Para clustering
-            validated['k'] = max(2, min(int(params['k']), 100))
         
         if 'elasticNetParam' in params:
             validated['elasticNetParam'] = max(0.0, min(float(params['elasticNetParam']), 1.0))

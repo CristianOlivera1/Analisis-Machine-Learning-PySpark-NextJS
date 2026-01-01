@@ -29,8 +29,6 @@ if __name__ == '__main__':
     logger.info(f"Environment: {env}")
     logger.info(f"Debug Mode: {app.config['DEBUG']}")
     logger.info(f"Upload Folder: {app.config['UPLOAD_FOLDER']}")
-    logger.info(f"Models Folder: {app.config['MODELS_FOLDER']}")
-    logger.info(f"Reports Folder: {app.config['REPORTS_FOLDER']}")
     logger.info("=" * 60)
     
     # Configuración del servidor

@@ -23,7 +23,7 @@ def get_model_types():
     Obtener tipos de modelos disponibles
     
     Returns:
-        Diccionario con modelos de clasificación, regresión y clustering
+        Diccionario con modelos de clasificación y regresión
     """
     return jsonify(TrainingService.get_available_models())
 
@@ -36,10 +36,10 @@ def train_model():
     
     Request Body:
         dataset_id: ID del dataset
-        model_type: Tipo (classification, regression, clustering)
+        model_type: Tipo (classification, regression)
         algorithm: Algoritmo específico
         features: Lista de columnas predictoras
-        target: Columna objetivo (no aplica para clustering)
+        target: Columna objetivo
         params: Parámetros del modelo
         test_size: Proporción de datos de prueba (default: 0.2)
         

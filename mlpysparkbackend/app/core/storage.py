@@ -163,7 +163,7 @@ class ModelStorage(BaseStorage):
         Args:
             id: ID único del modelo
             pipeline_model: Pipeline entrenado de Spark
-            model_type: Tipo de modelo (classification, regression, clustering)
+            model_type: Tipo de modelo (classification, regression)
             algorithm: Algoritmo utilizado
             features: Lista de features
             target: Columna objetivo

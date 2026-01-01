@@ -30,12 +30,10 @@ from pyspark.ml.regression import (
     RandomForestRegressor,
     GBTRegressor
 )
-from pyspark.ml.clustering import KMeans, BisectingKMeans
 from pyspark.ml.evaluation import (
     BinaryClassificationEvaluator,
     MulticlassClassificationEvaluator,
-    RegressionEvaluator,
-    ClusteringEvaluator
+    RegressionEvaluator
 )
 from pyspark.mllib.evaluation import MulticlassMetrics
 
@@ -102,18 +100,6 @@ class TrainingService:
                 'class': GBTRegressor,
                 'name': 'Gradient Boosted Trees Regressor',
                 'params': ['maxIter', 'maxDepth', 'stepSize']
-            }
-        },
-        'clustering': {
-            'kmeans': {
-                'class': KMeans,
-                'name': 'K-Means',
-                'params': ['k', 'maxIter', 'seed']
-            },
-            'bisecting_kmeans': {
-                'class': BisectingKMeans,
-                'name': 'Bisecting K-Means',
-                'params': ['k', 'maxIter', 'seed']
             }
         }
     }
@@ -302,7 +288,7 @@ class TrainingService:
         if not features or len(features) == 0:
             raise ValidationError("At least one feature must be specified")
         
-        if model_type != 'clustering' and not target:
+        if not target:
             raise ValidationError(
                 f"Target column required for {model_type}"
             )
@@ -469,14 +455,11 @@ class TrainingService:
             model_class, params
         )
         
-        if model_type == 'clustering':
-            model = model_class(featuresCol='features', **model_params)
-        else:
-            model = model_class(
-                featuresCol='features',
-                labelCol='label',
-                **model_params
-            )
+        model = model_class(
+            featuresCol='features',
+            labelCol='label',
+            **model_params
+        )
         
         stages.append(model)
         
@@ -540,10 +523,8 @@ class TrainingService:
         
         if model_type == 'classification':
             return TrainingService._calculate_classification_metrics(predictions)
-        elif model_type == 'regression':
+        else:  # regression
             return TrainingService._calculate_regression_metrics(predictions)
-        else:  # clustering
-            return TrainingService._calculate_clustering_metrics(predictions)
     
     @staticmethod
     def _calculate_classification_metrics(predictions: DataFrame) -> Dict[str, Any]:
@@ -645,44 +626,6 @@ class TrainingService:
             'r2': float(r2),
             'prediction_vs_actual': prediction_vs_actual
         }
-    
-    @staticmethod
-    def _calculate_clustering_metrics(predictions: DataFrame) -> Dict[str, Any]:
-        """Calculate clustering metrics"""
-        # Silhouette score
-        evaluator = ClusteringEvaluator(
-            featuresCol='features',
-            predictionCol='prediction',
-            metricName='silhouette'
-        )
-        silhouette = evaluator.evaluate(predictions)
-        
-        # Cluster distribution
-        cluster_dist = predictions.groupBy('prediction').count().collect()
-        cluster_distribution = {
-            f'cluster_{int(row["prediction"])}': int(row['count'])
-            for row in cluster_dist
-        }
-        
-        # Try to get cluster centers
-        cluster_centers = []
-        try:
-            # This would work if we had access to the model directly
-            # For now, we'll skip this as it requires model extraction
-            pass
-        except Exception as e:
-            logger.warning(f"Could not extract cluster centers: {str(e)}")
-        
-        result = {
-            'silhouette_score': float(silhouette),
-            'cluster_distribution': cluster_distribution,
-            'num_clusters': len(cluster_distribution)
-        }
-        
-        if cluster_centers:
-            result['cluster_centers'] = cluster_centers
-        
-        return result
     
     @staticmethod
     def _extract_feature_importance(

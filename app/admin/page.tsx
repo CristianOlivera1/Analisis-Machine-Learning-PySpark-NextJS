@@ -525,7 +525,7 @@ function TrainTab({
       return;
     }
 
-    if (modelType !== 'clustering' && !targetColumn) {
+    if (!targetColumn) {
       toast({
         title: "Error",
         description: "Selecciona una columna objetivo",
@@ -538,15 +538,12 @@ function TrainTab({
       setLoading(true);
       const request: TrainingRequest = {
         dataset_id: selectedDataset,
-        model_type: modelType as any,
+        model_type: modelType as 'classification' | 'regression',
         algorithm,
+        target_column: targetColumn,
         feature_columns: featureColumns,
         model_name: modelName || undefined,
       };
-
-      if (modelType !== 'clustering') {
-        request.target_column = targetColumn;
-      }
 
       await apiClient.trainModel(request);
       toast({
@@ -660,7 +657,7 @@ function TrainTab({
           </div>
         </div>
 
-        {selectedDatasetObj && modelType !== 'clustering' && (
+        {selectedDatasetObj && (
           <div className="space-y-2">
             <Label htmlFor="target">Columna Objetivo</Label>
             <Select value={targetColumn} onValueChange={setTargetColumn}>

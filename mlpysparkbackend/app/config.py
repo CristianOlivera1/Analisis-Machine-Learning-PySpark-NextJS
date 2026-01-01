@@ -23,10 +23,8 @@ class Config:
     # CORS
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', '*').split(',')
     
-    # Carpetas de almacenamiento
+    # Carpeta de almacenamiento de datasets
     UPLOAD_FOLDER = Path(os.getenv('UPLOAD_FOLDER', BASE_DIR / 'storage' / 'uploads'))
-    MODELS_FOLDER = Path(os.getenv('MODELS_FOLDER', BASE_DIR / 'storage' / 'models'))
-    REPORTS_FOLDER = Path(os.getenv('REPORTS_FOLDER', BASE_DIR / 'storage' / 'reports'))
     
     # Límites
     MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH', 100 * 1024 * 1024))  # 100MB
@@ -43,9 +41,8 @@ class Config:
     
     @classmethod
     def init_folders(cls):
-        """Crear carpetas necesarias si no existen"""
-        for folder in [cls.UPLOAD_FOLDER, cls.MODELS_FOLDER, cls.REPORTS_FOLDER]:
-            folder.mkdir(parents=True, exist_ok=True)
+        """Crear carpeta de uploads si no existe"""
+        cls.UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 
 
 class DevelopmentConfig(Config):

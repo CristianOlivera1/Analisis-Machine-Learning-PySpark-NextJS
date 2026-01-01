@@ -23,8 +23,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copiar el código de la aplicación
 COPY . .
 
-# Crear directorios necesarios
-RUN mkdir -p storage/uploads storage/models storage/reports
+# Crear directorio para datasets
+RUN mkdir -p storage/uploads
 
 # Exponer puerto
 EXPOSE 5000

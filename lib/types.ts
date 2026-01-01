@@ -35,7 +35,7 @@ export interface DatasetStatistics {
 export interface Model {
   id: string;
   name: string;
-  model_type: 'classification' | 'regression' | 'clustering';
+  model_type: 'classification' | 'regression';
   algorithm: string;
   dataset_id: string;
   target_column: string;
@@ -66,9 +66,9 @@ export interface AlgorithmParam {
 
 export interface TrainingRequest {
   dataset_id: string;
-  model_type: 'classification' | 'regression' | 'clustering';
+  model_type: 'classification' | 'regression';
   algorithm: string;
-  target_column?: string;
+  target_column: string;
   feature_columns: string[];
   test_size?: number;
   params?: Record<string, any>;

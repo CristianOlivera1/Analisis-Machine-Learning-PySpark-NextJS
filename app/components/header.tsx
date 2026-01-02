@@ -45,10 +45,6 @@ export function Header() {
                         })}
                     </BreadcrumbList>
                 </Breadcrumb>
-
-                {/* <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    v2025.1
-                </div> */}
             </div>
         </header>
     );

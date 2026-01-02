@@ -16,19 +16,32 @@ export interface DatasetPreview {
   total_rows: number;
 }
 
-export interface DatasetStatistics {
-  column: string;
+// Estadísticas para columnas numéricas
+export interface NumericStatistics {
   count: number;
-  mean?: number;
-  std?: number;
-  min?: number;
-  max?: number;
-  percentile_25?: number;
-  percentile_50?: number;
-  percentile_75?: number;
-  unique?: number;
-  top?: string;
-  freq?: number;
+  mean: number;
+  std: number;
+  min: number;
+  max: number;
+  quartiles: {
+    q1: number;
+    median: number;
+    q3: number;
+  };
+}
+
+// Estadísticas para columnas categóricas
+export interface CategoricalStatistics {
+  count: number;
+  unique: number;
+  top: string | null;
+  freq: number;
+}
+
+// Estructura completa de estadísticas del dataset
+export interface DatasetStatistics {
+  numeric: Record<string, NumericStatistics>;
+  categorical: Record<string, CategoricalStatistics>;
 }
 
 // Model Types

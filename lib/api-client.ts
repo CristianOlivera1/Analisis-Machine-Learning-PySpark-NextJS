@@ -20,7 +20,7 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
-      timeout: 30000, 
+      timeout: 180000, 
     });
 
     // Interceptor para manejo de errores
@@ -45,6 +45,7 @@ class ApiClient {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 120000, // 2 minutos para uploads (procesamiento Spark puede ser lento)
     });
     return data;
   }
@@ -72,8 +73,8 @@ class ApiClient {
   }
 
   // Exploration Endpoints
-  async getStatistics(datasetId: string): Promise<DatasetStatistics[]> {
-    const { data } = await this.client.get<{ statistics: DatasetStatistics[] }>(
+  async getStatistics(datasetId: string): Promise<DatasetStatistics> {
+    const { data } = await this.client.get<{ statistics: DatasetStatistics }>(
       `/datasets/${datasetId}/statistics`
     );
     return data.statistics;
@@ -118,7 +119,9 @@ class ApiClient {
       model_name: request.model_name
     };
     
-    const { data } = await this.client.post<any>('/models/train', backendRequest);
+    const { data } = await this.client.post<any>('/models/train', backendRequest, {
+      timeout: 180000, // 3 minutos para entrenamiento de modelos
+    });
     return {
       ...data,
       feature_columns: data.features || [],
@@ -156,7 +159,10 @@ class ApiClient {
         include_statistics: includeStatistics,
         include_metrics: includeMetrics,
       },
-      { responseType: 'blob' }
+      { 
+        responseType: 'blob',
+        timeout: 120000, // 2 minutos para generación de reportes
+      }
     );
     return data;
   }

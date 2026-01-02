@@ -8,7 +8,6 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from app import create_app
 from app.config import config_by_name
 
-# Configurar logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -19,7 +18,6 @@ logger = logging.getLogger(__name__)
 # Determinar entorno
 env = os.getenv('FLASK_ENV', 'development')
 
-# Crear aplicación
 app = create_app(config_by_name.get(env, config_by_name['default']))
 
 if __name__ == '__main__':
@@ -31,7 +29,6 @@ if __name__ == '__main__':
     logger.info(f"Upload Folder: {app.config['UPLOAD_FOLDER']}")
     logger.info("=" * 60)
     
-    # Configuración del servidor
     host = os.getenv('FLASK_HOST', '0.0.0.0')
     port = int(os.getenv('FLASK_PORT', 5000))
     

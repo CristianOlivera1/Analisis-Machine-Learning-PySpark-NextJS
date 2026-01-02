@@ -2,6 +2,7 @@
 Exploration Service - Business logic for data exploration and analysis
 """
 
+import math
 from typing import Dict, Any
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
@@ -12,6 +13,32 @@ from app.core.storage import DatasetStorage
 from app.utils.exceptions import NotFoundError, ValidationError
 
 logger = logging.getLogger(__name__)
+
+
+def sanitize_value(value):
+    """
+    Sanitize a value to ensure it's JSON serializable.
+    Converts NaN and Infinity to None.
+    """
+    if value is None:
+        return None
+    if isinstance(value, float):
+        if math.isnan(value) or math.isinf(value):
+            return None
+    return value
+
+
+def sanitize_dict(d):
+    """
+    Recursively sanitize all values in a dictionary.
+    Converts NaN and Infinity to None for JSON compatibility.
+    """
+    if isinstance(d, dict):
+        return {k: sanitize_dict(v) for k, v in d.items()}
+    elif isinstance(d, list):
+        return [sanitize_dict(item) for item in d]
+    else:
+        return sanitize_value(d)
 
 
 class ExplorationService:
@@ -92,7 +119,8 @@ class ExplorationService:
                 }
             
             logger.info(f"Statistics calculated for dataset: {dataset_id}")
-            return result
+            # Sanitize result to convert NaN/Infinity to null for JSON compatibility
+            return sanitize_dict(result)
             
         except NotFoundError:
             raise

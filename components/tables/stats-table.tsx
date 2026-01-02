@@ -9,9 +9,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { DatasetStatistics } from "@/lib/types";
 
 interface StatsTableProps {
-  statistics: any; // { numeric: {...}, categorical: {...} }
+  statistics: DatasetStatistics | null;
 }
 
 export function StatsTable({ statistics }: StatsTableProps) {
@@ -61,7 +62,7 @@ export function StatsTable({ statistics }: StatsTableProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {Object.entries(numericStats).map(([column, stat]: [string, any]) => (
+                {Object.entries(numericStats).map(([column, stat]) => (
                   <TableRow key={column}>
                     <TableCell className="font-medium">{column}</TableCell>
                     <TableCell className="text-right">{stat.count}</TableCell>
@@ -94,7 +95,7 @@ export function StatsTable({ statistics }: StatsTableProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {Object.entries(categoricalStats).map(([column, stat]: [string, any]) => (
+                {Object.entries(categoricalStats).map(([column, stat]) => (
                   <TableRow key={column}>
                     <TableCell className="font-medium">{column}</TableCell>
                     <TableCell className="text-right">{stat.count}</TableCell>

@@ -69,7 +69,6 @@ export default function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <div className="p-2 group-data-[collapsible=icon]:hidden text-[10px] text-center opacity-50">
-          © 2025 ML App
         </div>
       </SidebarFooter>
     </Sidebar>

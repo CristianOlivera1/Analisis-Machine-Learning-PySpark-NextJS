@@ -336,34 +336,34 @@ function ExploreTab({
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    setPreview(null);
+    setStatistics(null);
+    setHistogram(null);
+    setSelectedColumn("");
+    
     if (selectedDataset) {
-      loadPreview();
-      loadStatistics();
+      const loadData = async () => {
+        try {
+          setLoading(true);
+          const previewData = await apiClient.getDatasetPreview(selectedDataset.id, 10);
+          setPreview(previewData);
+        } catch (error) {
+          console.error('Error loading preview:', error);
+        } finally {
+          setLoading(false);
+        }
+        
+        try {
+          const statsData = await apiClient.getStatistics(selectedDataset.id);
+          setStatistics(statsData);
+        } catch (error) {
+          console.error('Error loading statistics:', error);
+        }
+      };
+      
+      loadData();
     }
   }, [selectedDataset]);
-
-  const loadPreview = async () => {
-    if (!selectedDataset) return;
-    try {
-      setLoading(true);
-      const data = await apiClient.getDatasetPreview(selectedDataset.id, 10);
-      setPreview(data);
-    } catch (error) {
-      console.error('Error loading preview:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadStatistics = async () => {
-    if (!selectedDataset) return;
-    try {
-      const data = await apiClient.getStatistics(selectedDataset.id);
-      setStatistics(data);
-    } catch (error) {
-      console.error('Error loading statistics:', error);
-    }
-  };
 
   const loadHistogram = async (column: string) => {
     if (!selectedDataset) return;
@@ -419,7 +419,7 @@ function ExploreTab({
 
       {selectedDataset && (
         <>
-          <Card className="w-full max-w-[1200px] overflow-hidden">
+          <Card className="w-full max-w-300 overflow-hidden">
             <CardHeader>
               <CardTitle>Vista Previa</CardTitle>
               <CardDescription>
@@ -441,7 +441,7 @@ function ExploreTab({
             </CardContent>
           </Card>
 
-          <Card className="w-full max-w-[1200px] overflow-hidden">
+          <Card className="w-full max-w-300 overflow-hidden">
             <CardHeader>
               <CardTitle>Estadísticas Descriptivas</CardTitle>
               <CardDescription>

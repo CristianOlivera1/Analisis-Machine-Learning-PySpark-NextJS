@@ -85,27 +85,6 @@ export default function Training() {
     }
   };
 
-  const loadSampleDataset = async (sampleName: string) => {
-    try {
-      setLoading(true);
-      const dataset = await apiClient.loadSampleDataset(sampleName);
-      toast({
-        title: "Dataset de ejemplo cargado",
-        description: `${dataset.name} se cargó correctamente`,
-      });
-      loadDatasets();
-      setActiveTab("explore");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Error al cargar el dataset",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const deleteDataset = async (datasetId: string) => {
     try {
       await apiClient.deleteDataset(datasetId);
@@ -160,7 +139,6 @@ export default function Training() {
             datasets={datasets}
             loading={loading}
             onFileUpload={handleFileUpload}
-            onLoadSample={loadSampleDataset}
             onDeleteDataset={deleteDataset}
           />
         </TabsContent>
@@ -194,13 +172,11 @@ function UploadTab({
   datasets,
   loading,
   onFileUpload,
-  onLoadSample,
   onDeleteDataset,
 }: {
   datasets: Dataset[];
   loading: boolean;
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onLoadSample: (sampleName: string) => void;
   onDeleteDataset: (id: string) => void;
 }) {
   return (
@@ -230,7 +206,6 @@ function UploadTab({
                 className={`cursor-pointer ${loading ? "pr-10" : ""}`}
               />
 
-              {/* Loader superpuesto en el input o a un lado */}
               {loading && (
                 <div className="absolute inset-y-0 right-3 flex items-center">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -252,29 +227,6 @@ function UploadTab({
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Datasets de Ejemplo</CardTitle>
-          <CardDescription>
-            Carga datos de ejemplo para probar
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {['iris', 'wine', 'housing'].map((sample) => (
-            <Button
-              key={sample}
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => onLoadSample(sample)}
-              disabled={loading}
-            >
-              <Database className="h-4 w-4 mr-2" />
-              {sample.charAt(0).toUpperCase() + sample.slice(1)}
-            </Button>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card className="md:col-span-2">
         <CardHeader>
           <CardTitle>Datasets Cargados ({datasets.length})</CardTitle>
           <CardDescription>
@@ -426,7 +378,7 @@ function ExploreTab({
                 Primeras 10 filas del dataset
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-0 sm:p-6"> {/* p-0 en móvil ayuda al scroll */}
+            <CardContent className="p-0 sm:p-6"> 
               {loading ? (
                 <Skeleton className="h-64 w-full" />
               ) : preview ? (

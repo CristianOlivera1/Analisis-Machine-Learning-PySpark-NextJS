@@ -31,9 +31,7 @@ export default function AppSidebar() {
 
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2 group-data-[collapsible=icon]:px-0 sm:px-2">
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gray-200 text-black">
-            <Database className="size-5" />
-          </div>
+      
           <div className="flex flex-col leading-none group-data-[collapsible=icon]:hidden">
             <span className="font-semibold">Análisis ML</span>
             <span className="text-xs text-muted-foreground">con PySpark</span>

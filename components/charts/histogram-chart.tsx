@@ -40,7 +40,7 @@ export function HistogramChart({ data, height = 300 }: HistogramChartProps) {
           />
           <YAxis label={{ value: 'Frecuencia', angle: -90, position: 'insideLeft' }} />
           <Tooltip 
-            formatter={(value: number) => [`${value} registros`, 'Frecuencia']}
+            formatter={(value) => [`${value ?? 0} registros`, 'Frecuencia']}
             labelFormatter={(label) => `Rango: ${label}`}
           />
           <Bar dataKey="count" fill="#8884d8" />

@@ -5,7 +5,7 @@ services:
     ports:
       - "5000:5000"
     volumes:
-      - ./mlpysparkbackend:/app  # Monta TODO el código (cambios en vivo)
+      - ./mlpysparkbackend:/app 
     environment:
       - FLASK_ENV=development
       - FLASK_HOST=0.0.0.0

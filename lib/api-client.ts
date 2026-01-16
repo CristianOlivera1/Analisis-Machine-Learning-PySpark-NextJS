@@ -9,7 +9,7 @@ import type {
   HistogramData,
 } from './types';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 class ApiClient {
   private client: AxiosInstance;
@@ -45,7 +45,7 @@ class ApiClient {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-      timeout: 120000, // 2 minutos para uploads (procesamiento Spark puede ser lento)
+      timeout: 120000, 
     });
     return data;
   }
@@ -72,7 +72,6 @@ class ApiClient {
     return data;
   }
 
-  // Exploration Endpoints
   async getStatistics(datasetId: string): Promise<DatasetStatistics> {
     const { data } = await this.client.get<{ statistics: DatasetStatistics }>(
       `/datasets/${datasetId}/statistics`
@@ -92,7 +91,6 @@ class ApiClient {
   async getModelTypes(): Promise<ModelType[]> {
     const { data } = await this.client.get<Record<string, Record<string, { name: string; params: string[] }>>>('/models/types');
     
-    // Transform backend response to frontend format
     return Object.entries(data).map(([type, algorithms]) => ({
       type,
       algorithms: Object.entries(algorithms).map(([key, algo]) => ({
@@ -161,7 +159,7 @@ class ApiClient {
       },
       { 
         responseType: 'blob',
-        timeout: 120000, // 2 minutos para generación de reportes
+        timeout: 120000,
       }
     );
     return data;

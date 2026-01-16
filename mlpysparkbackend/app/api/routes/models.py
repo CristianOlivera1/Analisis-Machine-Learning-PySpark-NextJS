@@ -19,33 +19,13 @@ models_bp = Blueprint('models', __name__)
 @models_bp.route('/types', methods=['GET'])
 @handle_exceptions
 def get_model_types():
-    """
-    Obtener tipos de modelos disponibles
-    
-    Returns:
-        Diccionario con modelos de clasificación y regresión
-    """
     return jsonify(TrainingService.get_available_models())
 
 
 @models_bp.route('/train', methods=['POST'])
 @handle_exceptions
 def train_model():
-    """
-    Entrenar un modelo de ML
     
-    Request Body:
-        dataset_id: ID del dataset
-        model_type: Tipo (classification, regression)
-        algorithm: Algoritmo específico
-        features: Lista de columnas predictoras
-        target: Columna objetivo
-        params: Parámetros del modelo
-        test_size: Proporción de datos de prueba (default: 0.2)
-        
-    Returns:
-        Modelo entrenado con métricas
-    """
     data = validate_request_json(request, TrainModelSchema)
     
     # Validaciones adicionales de negocio

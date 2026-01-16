@@ -16,17 +16,7 @@ reports_bp = Blueprint('reports', __name__)
 @reports_bp.route('/generate', methods=['POST'])
 @handle_exceptions
 def generate_report():
-    """
-    Generar reporte de modelo
-    
-    Request Body:
-        model_id: ID del modelo (opcional, si no se proporciona genera reporte de todos)
-        format: Formato de salida (excel, json)
-        include_data: Incluir datos de ejemplo (default: false)
-        
-    Returns:
-        Archivo de reporte o JSON
-    """
+
     data = validate_request_json(request, GenerateReportSchema)
     
     model_id = data.get('model_id')
@@ -46,7 +36,6 @@ def generate_report():
             include_data=include_data
         )
         
-        # Generate filename
         if model_id:
             filename = f'model_{model_id[:8]}_report.xlsx'
         else:

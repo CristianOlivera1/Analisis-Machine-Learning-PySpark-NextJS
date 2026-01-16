@@ -1,16 +1,10 @@
-"""
-Extensiones de Flask
-"""
-
 from flask_cors import CORS
 
 cors = CORS()
 
-
 def init_extensions(app):
     """Inicializar todas las extensiones"""
     
-    # Configurar CORS
     cors.init_app(app, resources={
         r"/api/*": {
             "origins": app.config.get('CORS_ORIGINS', '*'),

@@ -2,7 +2,7 @@
 Dataset Schemas - Validación de datos para endpoints de datasets
 """
 
-from typing import Dict, List
+from typing import Dict
 
 
 class DatasetResponseSchema:

@@ -16,15 +16,7 @@ datasets_bp = Blueprint('datasets', __name__)
 @datasets_bp.route('/upload', methods=['POST'])
 @handle_exceptions
 def upload_dataset():
-    """
-    Subir un dataset (CSV o Excel)
-    
-    Request:
-        file: Archivo CSV o Excel
-        
-    Returns:
-        Dataset info con ID generado
-    """
+ 
     if 'file' not in request.files:
         raise ValidationError('No se proporcionó ningún archivo', field='file')
     
@@ -33,7 +25,6 @@ def upload_dataset():
     if file.filename == '':
         raise ValidationError('No se seleccionó ningún archivo', field='file')
     
-    # Validar extensión
     if not validate_file_extension(file.filename, current_app.config['ALLOWED_EXTENSIONS']):
         allowed = ', '.join(current_app.config['ALLOWED_EXTENSIONS'])
         raise ValidationError(
@@ -41,7 +32,6 @@ def upload_dataset():
             field='file'
         )
     
-    # Procesar archivo
     result = DatasetService.upload_file(file)
     
     return jsonify(DatasetResponseSchema.dump(result)), 201
@@ -107,20 +97,3 @@ def delete_dataset(dataset_id: str):
         'success': True,
         'message': 'Dataset eliminado correctamente'
     })
-
-
-@datasets_bp.route('/samples/<sample_id>/load', methods=['POST'])
-@handle_exceptions
-def load_sample_dataset(sample_id: str):
-    """
-    Cargar un dataset de ejemplo
-    
-    Args:
-        sample_id: ID del dataset de ejemplo
-        
-    Returns:
-        Dataset info
-    """
-    result = DatasetService.load_sample(sample_id)
-    
-    return jsonify(DatasetResponseSchema.dump(result)), 201

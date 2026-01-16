@@ -1,7 +1,3 @@
-"""
-Validators - Validación de datos
-"""
-
 import os
 from typing import Any, Dict, Set
 from werkzeug.datastructures import FileStorage

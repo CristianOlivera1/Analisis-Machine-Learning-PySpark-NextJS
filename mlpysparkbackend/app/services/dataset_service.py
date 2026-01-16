@@ -6,10 +6,8 @@ Handles all dataset-related operations including upload, processing, and retriev
 import os
 import uuid
 import logging
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Any
 from datetime import datetime
-from pathlib import Path
-import tempfile
 
 import pandas as pd
 from werkzeug.datastructures import FileStorage
@@ -31,70 +29,44 @@ from app.utils.validators import validate_file_extension, validate_file_size
 
 logger = logging.getLogger(__name__)
 
-
 class DatasetService:
-    """
-    Service class for dataset management operations
-    Handles file uploads, data processing, and dataset lifecycle
-    """
-    
-    # Supported file extensions
+  
     ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'xls'}
     
-    # Maximum file size (100MB)
     MAX_FILE_SIZE = 100 * 1024 * 1024
     
     @staticmethod
     def upload_file(file: FileStorage) -> Dict[str, Any]:
-        """
-        Process and upload a CSV or Excel file
-        
-        Args:
-            file: File uploaded by user (CSV or Excel)
-            
-        Returns:
-            Dictionary containing dataset_id, filename, and dataset info
-            
-        Raises:
-            ValidationError: If file validation fails
-            InternalServerError: If processing fails
-        """
+  
         try:
-            # Validate file presence
             if not file or file.filename == '':
                 raise ValidationError("No se seleccionó ningún archivo")
             
             filename = file.filename
             
-            # Validate file extension
             if not validate_file_extension(filename, DatasetService.ALLOWED_EXTENSIONS):
                 raise ValidationError(
                     f"Formato de archivo no soportado. Use: {', '.join(DatasetService.ALLOWED_EXTENSIONS)}"
                 )
             
-            # Validate file size
             if not validate_file_size(file, DatasetService.MAX_FILE_SIZE):
                 raise ValidationError(
                     f"El archivo excede el tamaño máximo permitido ({DatasetService.MAX_FILE_SIZE // (1024*1024)}MB)"
                 )
             
-            # Generate unique dataset ID
             dataset_id = str(uuid.uuid4())
             file_ext = os.path.splitext(filename)[1].lower()
             
-            # Save file temporarily
             upload_folder = current_app.config.get('UPLOAD_FOLDER')
             os.makedirs(upload_folder, exist_ok=True)
             
             temp_path = os.path.join(upload_folder, f"{dataset_id}{file_ext}")
             
-            # Reset file pointer to beginning before saving
             file.seek(0)
             file.save(temp_path)
             
-            logger.info(f"File saved temporarily: {temp_path}")
+            logger.info(f"Archivo guardado temporalmente: {temp_path}")
             
-            # Load file into Spark DataFrame
             spark = SparkManager.get_session()
             
             if file_ext == '.csv':
@@ -106,24 +78,20 @@ class DatasetService:
                     multiLine=True,
                     escape='"'
                 )
-                logger.info(f"CSV file loaded: {filename}")
+                logger.info(f"Archivo CSV cargado: {filename}")
                 
             elif file_ext in ['.xlsx', '.xls']:
-                # For Excel, convert through pandas first
                 pdf = pd.read_excel(temp_path, engine='openpyxl' if file_ext == '.xlsx' else 'xlrd')
                 df = pandas_to_spark(spark, pdf)
-                logger.info(f"Excel file loaded: {filename}")
+                logger.info(f"Archivo Excel cargado: {filename}")
                 
             else:
-                # Cleanup and raise error
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
                 raise ValidationError("Formato de archivo no soportado")
             
-            # Get dataset information
             info = DatasetService._get_dataset_info(df)
             
-            # Store dataset
             DatasetStorage.add_dataset(
                 id=dataset_id,
                 dataframe=df,
@@ -132,7 +100,7 @@ class DatasetService:
                 info=info
             )
             
-            logger.info(f"Dataset stored successfully: {dataset_id} ({filename})")
+            logger.info(f"Dataset almacenado correctamente: {dataset_id} ({filename})")
             
             return {
                 'id': dataset_id,
@@ -143,37 +111,20 @@ class DatasetService:
             }
             
         except (ValidationError, BadRequestError) as e:
-            # Cleanup temporary file on validation error
             if 'temp_path' in locals() and os.path.exists(temp_path):
                 os.remove(temp_path)
-            logger.warning(f"Validation error during file upload: {str(e)}")
+            logger.warning(f"Error de validación durante la carga del archivo: {str(e)}")
             raise
             
         except Exception as e:
-            # Cleanup temporary file on any error
             if 'temp_path' in locals() and os.path.exists(temp_path):
                 os.remove(temp_path)
-            logger.error(f"Error uploading file: {str(e)}", exc_info=True)
+            logger.error(f"Error al subir el archivo: {str(e)}", exc_info=True)
             raise InternalServerError(f"Error al procesar el archivo: {str(e)}")
     
     @staticmethod
     def upload_json(data: Dict[str, Any], name: Optional[str] = None) -> Dict[str, Any]:
-        """
-        Process and upload dataset from JSON data (e.g., from localStorage)
-        
-        Args:
-            data: Dictionary containing 'data' key with list of records
-            name: Optional name for the dataset
-            
-        Returns:
-            Dictionary containing dataset_id, filename, and dataset info
-            
-        Raises:
-            ValidationError: If data validation fails
-            InternalServerError: If processing fails
-        """
         try:
-            # Validate data presence
             if not data or 'data' not in data:
                 raise ValidationError("No se proporcionaron datos válidos")
             
@@ -182,7 +133,6 @@ class DatasetService:
             if not isinstance(records, list) or len(records) == 0:
                 raise ValidationError("Los datos deben ser una lista no vacía de registros")
             
-            # Generate unique dataset ID
             dataset_id = str(uuid.uuid4())
             filename = name or data.get('name', f'dataset_{dataset_id[:8]}')
             
@@ -197,7 +147,6 @@ class DatasetService:
             
             logger.info(f"JSON data converted to DataFrame: {len(records)} rows")
             
-            # Get dataset information
             info = DatasetService._get_dataset_info(df)
             
             # Store dataset (no file path for JSON data)
@@ -401,153 +350,6 @@ class DatasetService:
         except Exception as e:
             logger.error(f"Error deleting dataset {dataset_id}: {str(e)}", exc_info=True)
             raise InternalServerError(f"Error al eliminar el dataset: {str(e)}")
-    
-    @staticmethod
-    def get_available_samples() -> List[Dict[str, Any]]:
-        """
-        Get list of available sample datasets
-        
-        Returns:
-            List of sample dataset metadata
-        """
-        samples = [
-            {
-                'id': 'iris',
-                'name': 'Iris Dataset',
-                'description': 'Dataset clásico de clasificación de flores iris con 3 especies',
-                'rows': 150,
-                'columns': 5,
-                'type': 'classification',
-                'features': ['sepal_length', 'sepal_width', 'petal_length', 'petal_width'],
-                'target': 'species'
-            },
-            {
-                'id': 'wine',
-                'name': 'Wine Quality',
-                'description': 'Calidad de vinos para clasificación basada en propiedades químicas',
-                'rows': 178,
-                'columns': 14,
-                'type': 'classification',
-                'features': 'chemical properties',
-                'target': 'wine_class'
-            },
-            {
-                'id': 'housing',
-                'name': 'California Housing',
-                'description': 'Precios de viviendas en California para regresión',
-                'rows': 20640,
-                'columns': 9,
-                'type': 'regression',
-                'features': ['MedInc', 'HouseAge', 'AveRooms', 'AveBedrms', 'Population', 'AveOccup', 'Latitude', 'Longitude'],
-                'target': 'price'
-            }
-        ]
-        
-        logger.info(f"Retrieved {len(samples)} sample datasets")
-        
-        return samples
-    
-    @staticmethod
-    def load_sample(sample_id: str) -> Dict[str, Any]:
-        """
-        Load a sample dataset from sklearn
-        
-        Args:
-            sample_id: Sample dataset identifier ('iris', 'wine', 'housing')
-            
-        Returns:
-            Dictionary containing dataset_id, filename, and dataset info
-            
-        Raises:
-            ValidationError: If sample_id is invalid
-            InternalServerError: If loading fails
-        """
-        try:
-            # Import sklearn datasets
-            try:
-                from sklearn import datasets
-            except ImportError:
-                raise InternalServerError(
-                    "scikit-learn no está instalado. Instale con: pip install scikit-learn"
-                )
-            
-            spark = SparkManager.get_session()
-            dataset_id = str(uuid.uuid4())
-            
-            # Load appropriate sample dataset
-            if sample_id == 'iris':
-                iris = datasets.load_iris()
-                pdf = pd.DataFrame(
-                    iris.data,
-                    columns=['sepal_length', 'sepal_width', 'petal_length', 'petal_width']
-                )
-                pdf['species'] = iris.target.astype(int)
-                # Map target to species names
-                species_names = ['setosa', 'versicolor', 'virginica']
-                pdf['species_name'] = pdf['species'].apply(lambda x: species_names[x])
-                name = 'Iris Dataset'
-                logger.info("Iris dataset loaded from sklearn")
-                
-            elif sample_id == 'wine':
-                wine = datasets.load_wine()
-                pdf = pd.DataFrame(wine.data, columns=wine.feature_names)
-                pdf['target'] = wine.target.astype(int)
-                # Map target to wine class names (convert to string explicitly)
-                pdf['wine_class'] = pdf['target'].apply(lambda x: str(wine.target_names[x]))
-                name = 'Wine Quality Dataset'
-                logger.info("Wine dataset loaded from sklearn")
-                
-            elif sample_id == 'housing' or sample_id == 'boston':
-                # Boston is deprecated, use California Housing instead
-                try:
-                    from sklearn.datasets import fetch_california_housing
-                    housing = fetch_california_housing()
-                    pdf = pd.DataFrame(housing.data, columns=housing.feature_names)
-                    pdf['price'] = housing.target.astype(float)
-                    name = 'California Housing Dataset'
-                    logger.info("California Housing dataset loaded from sklearn")
-                except Exception as e:
-                    logger.error(f"Error loading housing dataset: {str(e)}")
-                    raise InternalServerError("Error al cargar el dataset de viviendas")
-                
-            else:
-                raise ValidationError(
-                    f"Dataset de ejemplo '{sample_id}' no encontrado. "
-                    f"Opciones válidas: iris, wine, housing"
-                )
-            
-            # Convert to Spark DataFrame (Windows-safe method)
-            df = pandas_to_spark(spark, pdf)
-            
-            # Get dataset information
-            info = DatasetService._get_dataset_info(df)
-            
-            # Store dataset (no file path for sample datasets)
-            DatasetStorage.add_dataset(
-                id=dataset_id,
-                dataframe=df,
-                filename=name,
-                path=None,
-                info=info
-            )
-            
-            logger.info(f"Sample dataset stored successfully: {dataset_id} ({name})")
-            
-            return {
-                'id': dataset_id,
-                'filename': name,
-                'path': None,
-                'created_at': datetime.now().isoformat(),
-                'sample_id': sample_id,
-                'info': info
-            }
-            
-        except (ValidationError, BadRequestError):
-            raise
-            
-        except Exception as e:
-            logger.error(f"Error loading sample dataset {sample_id}: {str(e)}", exc_info=True)
-            raise InternalServerError(f"Error al cargar dataset de ejemplo: {str(e)}")
     
     @staticmethod
     def _get_dataset_info(df: DataFrame) -> Dict[str, Any]:

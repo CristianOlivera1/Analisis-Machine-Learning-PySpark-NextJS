@@ -1,8 +1,3 @@
-"""
-Application Factory Pattern
-Inicialización de la aplicación Flask
-"""
-
 from flask import Flask
 from flask_cors import CORS
 
@@ -14,15 +9,7 @@ from app.utils.exceptions import register_error_handlers
 
 
 def create_app(config_class=Config):
-    """
-    Factory function para crear la aplicación Flask
-    
-    Args:
-        config_class: Clase de configuración a utilizar
-        
-    Returns:
-        Flask application instance
-    """
+
     app = Flask(__name__)
     app.config.from_object(config_class)
     

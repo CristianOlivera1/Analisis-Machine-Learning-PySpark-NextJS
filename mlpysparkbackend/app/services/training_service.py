@@ -1,22 +1,16 @@
-"""
-Training Service - Business logic for ML model training and management
-Handles all ML operations including training, prediction, evaluation, and model lifecycle
-"""
+# Training Service - gestión de modelos de aprendizaje automático. Gestiona todas las operaciones de aprendizaje automático, incluyendo el entrenamiento, la predicción, la evaluación y el ciclo de vida del modelo.
 
-import os
 import uuid
 import logging
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime
 
 from pyspark.sql import DataFrame
-from pyspark.sql.functions import col, count, when, isnan, lit, udf, array
 from pyspark.ml import Pipeline, PipelineModel
 from pyspark.ml.feature import (
     VectorAssembler, 
     StandardScaler, 
     StringIndexer,
-    IndexToString
 )
 from pyspark.ml.classification import (
     LogisticRegression,
@@ -37,26 +31,21 @@ from pyspark.ml.evaluation import (
 )
 from pyspark.mllib.evaluation import MulticlassMetrics
 
-from app.core.spark_manager import SparkManager
 from app.core.storage import DatasetStorage, ModelStorage
-from app.utils.helpers import pandas_to_spark
 from app.utils.exceptions import (
     ValidationError,
     NotFoundError,
-    BadRequestError,
     InternalServerError
 )
 
 logger = logging.getLogger(__name__)
 
-
 class TrainingService:
     """
     Service class for ML model training and management operations
-    Handles complete ML pipeline from preprocessing to prediction
+    Gestiona el pipeline completo de ML desde el preprocesamiento hasta la predicción
     """
     
-    # Supported algorithms by type
     ALGORITHMS = {
         'classification': {
             'logistic_regression': {
@@ -135,33 +124,13 @@ class TrainingService:
         params: Optional[Dict[str, Any]] = None,
         test_size: float = 0.3
     ) -> Dict[str, Any]:
-        """
-        Train an ML model with complete preprocessing pipeline
-        
-        Args:
-            dataset_id: ID of the dataset to use
-            model_type: Type of model (classification, regression, clustering)
-            algorithm: Algorithm to use
-            features: List of feature column names
-            target: Target column name (not needed for clustering)
-            params: Algorithm hyperparameters
-            test_size: Proportion of data for testing (0-1)
-            
-        Returns:
-            Dict with model ID, metrics, and training info
-            
-        Raises:
-            ValidationError: Invalid parameters
-            NotFoundError: Dataset not found
-            InternalServerError: Training failed
-        """
+       
         logger.info(f"Starting training: {model_type}/{algorithm} on dataset {dataset_id}")
         
         TrainingService._validate_training_inputs(
             model_type, algorithm, features, target, test_size
         )
         
-        # Get dataset
         df = DatasetStorage.get_dataframe(dataset_id)
         if df is None:
             raise NotFoundError(f"Dataset {dataset_id} not found")
@@ -573,7 +542,6 @@ class TrainingService:
             'confusion_matrix': confusion_matrix
         }
         
-        # Try to calculate ROC AUC for binary classification
         try:
             n_classes = len(confusion_matrix)
             if n_classes == 2:

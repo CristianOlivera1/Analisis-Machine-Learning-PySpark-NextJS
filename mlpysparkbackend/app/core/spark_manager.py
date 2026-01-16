@@ -1,8 +1,3 @@
-"""
-Spark Manager - Gestión centralizada de Spark Session
-Implementa patrón Singleton para la sesión de Spark
-"""
-
 from typing import Optional, Dict, Any
 import logging
 from threading import Lock
@@ -13,11 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class SparkManager:
-    """
-    Gestor centralizado de Spark Session
-    Implementa patrón Singleton thread-safe
-    """
-    
+
     _instance: Optional[SparkSession] = None
     _lock: Lock = Lock()
     _config: Dict[str, Any] = {}

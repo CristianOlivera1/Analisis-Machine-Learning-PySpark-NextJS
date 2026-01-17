@@ -1,6 +1,8 @@
 # Análisis y entrenamiento de modelos de Machine Learning con PySpark
 
-Aplicación web moderna de análisis y predicción de datos con Machine Learning, construida con Next.js 16, TypeScript y shadcn/ui.
+Aplicación web de análisis y predicción de datos con Machine Learning, construida con Next.js 16, shadcn/ui, Flask y PySpark.
+
+<img src="https://github.com/user-attachments/assets/1fbe64fb-f1fb-4a26-a5f3-c044a5acd830" alt="Banner PySpark" />
 
 ## 🚀 Características Implementadas
 
